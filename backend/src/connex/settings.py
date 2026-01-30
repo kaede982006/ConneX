@@ -1,5 +1,5 @@
-from typing import Any, Dict, List, Optional, Union
-from pydantic import AnyHttpUrl, PostgresDsn, validator
+from typing import Any, Dict, Optional
+from pydantic import validator
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
@@ -12,19 +12,16 @@ class Settings(BaseSettings):
     POSTGRES_DB: str = "connex"
     POSTGRES_PORT: str = "5432"
     
-    SQLALCHEMY_DATABASE_URI: Optional[PostgresDsn] = None
+    SQLALCHEMY_DATABASE_URI: Optional[str] = None
 
     @validator("SQLALCHEMY_DATABASE_URI", pre=True)
     def assemble_db_connection(cls, v: Optional[str], values: Dict[str, Any]) -> Any:
         if isinstance(v, str):
             return v
-        return PostgresDsn.build(
-            scheme="postgresql+asyncpg",
-            username=values.get("POSTGRES_USER"),
-            password=values.get("POSTGRES_PASSWORD"),
-            host=values.get("POSTGRES_SERVER"),
-            port=values.get("POSTGRES_PORT"),
-            path=f"{values.get('POSTGRES_DB') or ''}",
+        return (
+            f"postgresql+asyncpg://{values.get('POSTGRES_USER')}:"
+            f"{values.get('POSTGRES_PASSWORD')}@{values.get('POSTGRES_SERVER')}:"
+            f"{values.get('POSTGRES_PORT')}/{values.get('POSTGRES_DB')}"
         )
 
     SECRET_KEY: str = "chamgeme_super_secret_key_for_jwt_token_generation"

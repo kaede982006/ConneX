@@ -1,54 +1,34 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
-from connex.infra.db.session import get_db
-from connex.domain.models.user import User
 from sqlalchemy import select
-# Pydantic Schemas would be imported here
+from sqlalchemy.ext.asyncio import AsyncSession
+from connex.db.session import get_session
+from connex.models.user import User
+from connex.schemas.auth import AuthResponse, LoginRequest, RegisterRequest
+from connex.security.auth import create_access_token, hash_password, verify_password
 
 router = APIRouter()
 
-@router.post("/register", status_code=status.HTTP_201_CREATED)
-async def register(
-    user_data: dict, # Replace with Schema
-    db: AsyncSession = Depends(get_db)
-):
-    # Check duplicate
-    stmt = select(User).where(User.username == user_data["username"])
-    result = await db.execute(stmt)
-    if result.scalar_one_or_none():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username already registered"
-        )
-    
-    # Create User
-    new_user = User(
-        username=user_data["username"],
-        hashed_password="hashed_placeholder", # Use hasher
-        identity_key=user_data.get("publicKey")
+@router.post("/register", response_model=AuthResponse)
+async def register(request: RegisterRequest, session: AsyncSession = Depends(get_session)):
+    result = await session.execute(select(User).where(User.username == request.username))
+    if result.scalar_one_or_none() is not None:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="username already exists")
+    user = User(
+        username=request.username,
+        password_hash=hash_password(request.password),
+        display_name=request.display_name,
     )
-    db.add(new_user)
-    await db.commit()
-    await db.refresh(new_user)
-    return {"user_id": new_user.id, "username": new_user.username}
+    session.add(user)
+    await session.commit()
+    await session.refresh(user)
+    token = create_access_token(str(user.id))
+    return AuthResponse(access_token=token, user_id=user.id, username=user.username)
 
-@router.post("/login")
-async def login(
-    user_data: dict, # Replace with Schema
-    db: AsyncSession = Depends(get_db)
-):
-    stmt = select(User).where(User.username == user_data["username"])
-    result = await db.execute(stmt)
+@router.post("/login", response_model=AuthResponse)
+async def login(request: LoginRequest, session: AsyncSession = Depends(get_session)):
+    result = await session.execute(select(User).where(User.username == request.username))
     user = result.scalar_one_or_none()
-    
-    if not user: # or password validation failure
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password"
-        )
-        
-    return {
-        "access_token": "jwt_token_placeholder", 
-        "token_type": "bearer",
-        "user_id": user.id
-    }
+    if user is None or not verify_password(request.password, user.password_hash):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid credentials")
+    token = create_access_token(str(user.id))
+    return AuthResponse(access_token=token, user_id=user.id, username=user.username)

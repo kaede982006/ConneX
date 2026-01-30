@@ -2,6 +2,7 @@ package com.connex.app.di
 
 import com.connex.app.BuildConfig
 import com.connex.app.data.remote.api.AuthApi
+import com.connex.app.data.remote.api.AuthInterceptor
 import com.connex.app.data.remote.api.RoomApi
 import com.connex.app.data.remote.api.UploadApi
 import com.connex.app.data.remote.ws.ChatSocket
@@ -33,8 +34,9 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(): OkHttpClient {
+    fun provideOkHttpClient(prefs: SecurePrefs): OkHttpClient {
         return OkHttpClient.Builder()
+            .addInterceptor(AuthInterceptor(prefs))
             .addInterceptor(HttpLoggingInterceptor().apply {
                 level = HttpLoggingInterceptor.Level.BODY
             })
