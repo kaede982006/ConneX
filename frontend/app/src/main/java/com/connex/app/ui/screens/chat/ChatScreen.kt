@@ -33,6 +33,7 @@ fun ChatScreen(
     val msgState by vm.messages.collectAsState()
     val typing by vm.typing.collectAsState()
     val status by vm.status.collectAsState()
+    val meUserId = vm.meUserId()
 
     val ctx = LocalContext.current
     var text by remember { mutableStateOf("") }
@@ -96,6 +97,7 @@ fun ChatScreen(
                     val payload = vm.decrypt(roomId, channelId, m)
                     MessageItem(
                         senderId = m.senderId,
+                        isMe = meUserId != null && m.senderId == meUserId,
                         payload = payload,
                         onOpenUrl = { url ->
                             val i = Intent(Intent.ACTION_VIEW, Uri.parse(url))
@@ -137,10 +139,16 @@ fun ChatScreen(
 }
 
 @Composable
-private fun MessageItem(senderId: String, payload: ChatPayload, onOpenUrl: (String) -> Unit) {
+private fun MessageItem(
+    senderId: String,
+    isMe: Boolean,
+    payload: ChatPayload,
+    onOpenUrl: (String) -> Unit
+) {
+    val label = if (isMe) "나" else senderId
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(senderId, style = MaterialTheme.typography.labelMedium)
+            Text(label, style = MaterialTheme.typography.labelMedium)
             when (payload.type) {
                 ChatPayload.TYPE_TEXT, ChatPayload.TYPE_SYSTEM -> {
                     Text(payload.text.orEmpty())

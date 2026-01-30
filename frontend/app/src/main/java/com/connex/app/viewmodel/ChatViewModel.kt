@@ -7,6 +7,7 @@ import com.connex.app.core.util.Result
 import com.connex.app.core.util.UiState
 import com.connex.app.data.local.db.entity.MessageEntity
 import com.connex.app.data.repository.ChatRepository
+import com.connex.app.data.repository.AuthRepository
 import com.connex.app.data.repository.RoomRepository
 import com.connex.app.data.repository.UploadRepository
 import com.connex.app.domain.model.ChatPayload
@@ -20,7 +21,8 @@ import javax.inject.Inject
 class ChatViewModel @Inject constructor(
     private val roomRepo: RoomRepository,
     private val chatRepo: ChatRepository,
-    private val uploadRepo: UploadRepository
+    private val uploadRepo: UploadRepository,
+    private val authRepo: AuthRepository
 ) : ViewModel() {
 
     private val _messages = MutableStateFlow<UiState<List<MessageEntity>>>(UiState.Idle)
@@ -92,4 +94,6 @@ class ChatViewModel @Inject constructor(
     fun decrypt(roomId: String, channelId: String, msg: MessageEntity): ChatPayload {
         return chatRepo.decrypt(roomId, channelId, msg.senderId, msg.messageId, msg.envelopeJson)
     }
+
+    fun meUserId(): String? = authRepo.meUserId()
 }
