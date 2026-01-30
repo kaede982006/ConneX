@@ -30,6 +30,9 @@ class Settings(BaseSettings):
     
     STORAGE_TYPE: str = "local"
     UPLOAD_DIR: str = "./uploads"
+    DB_INIT_RETRIES: int = 5
+    DB_INIT_RETRY_DELAY_SECONDS: float = 1.0
+    DB_INIT_REQUIRED: bool = False
 
     class Config:
         case_sensitive = True

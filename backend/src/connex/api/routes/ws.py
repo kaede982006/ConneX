@@ -18,12 +18,19 @@ async def chat_ws(websocket: WebSocket, session: AsyncSession = Depends(get_sess
     room_id = websocket.query_params.get("room_id")
     channel_id = websocket.query_params.get("channel_id")
     user_id = decode_access_token(token) if token else None
-    if user_id is None:
+    if user_id is None or room_id is None or channel_id is None:
+        await websocket.close(code=1008)
+        return
+    try:
+        room_id_int = int(room_id)
+        channel_id_int = int(channel_id)
+        user_id_int = int(user_id)
+    except ValueError:
         await websocket.close(code=1008)
         return
 
     membership = await session.execute(
-        select(RoomMember).where(RoomMember.room_id == int(room_id), RoomMember.user_id == int(user_id))
+        select(RoomMember).where(RoomMember.room_id == room_id_int, RoomMember.user_id == user_id_int)
     )
     if membership.scalar_one_or_none() is None:
         await websocket.close(code=1008)
@@ -40,7 +47,7 @@ async def chat_ws(websocket: WebSocket, session: AsyncSession = Depends(get_sess
                     room_id=room_id,
                     channel_id=channel_id,
                     message_id=incoming.message_id,
-                    sender_id=str(user_id),
+                    sender_id=str(user_id_int),
                     envelope=incoming.envelope,
                     created_at_ms=int(time.time() * 1000),
                 )
@@ -50,7 +57,7 @@ async def chat_ws(websocket: WebSocket, session: AsyncSession = Depends(get_sess
                     type="typing",
                     room_id=room_id,
                     channel_id=channel_id,
-                    sender_id=str(user_id),
+                    sender_id=str(user_id_int),
                     is_typing=incoming.is_typing,
                 )
                 await manager.broadcast(room_id, channel_id, outgoing.model_dump_json(by_alias=True))

@@ -19,13 +19,13 @@ async def push_key(
         delete(RoomKey).where(
             RoomKey.room_id == request.room_id,
             RoomKey.channel_id == request.channel_id,
-            RoomKey.target_user_id == int(request.target_user_id),
+            RoomKey.target_user_id == request.target_user_id,
         )
     )
     entry = RoomKey(
         room_id=request.room_id,
         channel_id=request.channel_id,
-        target_user_id=int(request.target_user_id),
+        target_user_id=request.target_user_id,
         encrypted_key_b64=request.encrypted_key_b64,
     )
     session.add(entry)

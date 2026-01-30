@@ -44,13 +44,13 @@ class RoleResponse(BaseModel):
     model_config = {"populate_by_name": True}
 
 class GrantRoleRequest(BaseModel):
-    user_id: str = Field(alias="userId")
-    role_id: str = Field(alias="roleId")
+    user_id: int = Field(alias="userId")
+    role_id: int = Field(alias="roleId")
 
     model_config = {"populate_by_name": True}
 
 class RevokeRoleRequest(BaseModel):
-    user_id: str = Field(alias="userId")
-    role_id: str = Field(alias="roleId")
+    user_id: int = Field(alias="userId")
+    role_id: int = Field(alias="roleId")
 
     model_config = {"populate_by_name": True}

@@ -206,11 +206,11 @@ async def grant_role(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="room not found")
     if room_obj.owner_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="only owner can grant roles")
-    role = await session.execute(select(Role).where(Role.id == int(request.role_id), Role.room_id == room_id))
+    role = await session.execute(select(Role).where(Role.id == request.role_id, Role.room_id == room_id))
     role_obj = role.scalar_one_or_none()
     if role_obj is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="role not found")
-    assignment = RoleAssignment(room_id=room_id, user_id=int(request.user_id), role_id=role_obj.id)
+    assignment = RoleAssignment(room_id=room_id, user_id=request.user_id, role_id=role_obj.id)
     session.add(assignment)
     await session.commit()
     return {"status": "granted"}
@@ -232,8 +232,8 @@ async def revoke_role(
         select(RoleAssignment)
         .where(
             RoleAssignment.room_id == room_id,
-            RoleAssignment.user_id == int(request.user_id),
-            RoleAssignment.role_id == int(request.role_id),
+            RoleAssignment.user_id == request.user_id,
+            RoleAssignment.role_id == request.role_id,
         )
     )
     assignment = result.scalar_one_or_none()

@@ -2,7 +2,7 @@ import asyncio
 import logging
 
 from connex.db.base import Base
-from connex.db.session import engine
+from connex.db.session import engine, set_db_ready
 from connex.settings import settings
 import connex.models  # noqa: F401
 
@@ -14,6 +14,7 @@ async def init_db() -> None:
         try:
             async with engine.begin() as conn:
                 await conn.run_sync(Base.metadata.create_all)
+            set_db_ready(True)
             return
         except Exception as exc:
             last_error = exc
@@ -28,5 +29,12 @@ async def init_db() -> None:
             await asyncio.sleep(settings.DB_INIT_RETRY_DELAY_SECONDS)
 
     assert last_error is not None
-    logger.exception("Database init failed after %s attempts.", settings.DB_INIT_RETRIES)
-    raise last_error
+    if settings.DB_INIT_REQUIRED:
+        logger.exception("Database init failed after %s attempts.", settings.DB_INIT_RETRIES)
+        raise last_error
+    set_db_ready(False)
+    logger.error(
+        "Database init failed after %s attempts; continuing without database connection because "
+        "DB_INIT_REQUIRED is false.",
+        settings.DB_INIT_RETRIES,
+    )
