@@ -28,5 +28,17 @@ async def init_db() -> None:
             await asyncio.sleep(settings.DB_INIT_RETRY_DELAY_SECONDS)
 
     assert last_error is not None
-    logger.exception("Database init failed after %s attempts.", settings.DB_INIT_RETRIES)
+    if not settings.DB_INIT_REQUIRED:
+        logger.warning(
+            "Database init failed after %s attempts; continuing without database connection because "
+            "DB_INIT_REQUIRED is false.",
+            settings.DB_INIT_RETRIES,
+            exc_info=last_error,
+        )
+        return
+    logger.error(
+        "Database init failed after %s attempts.",
+        settings.DB_INIT_RETRIES,
+        exc_info=last_error,
+    )
     raise last_error
