@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     POSTGRES_PORT: str = "5432"
     
     SQLALCHEMY_DATABASE_URI: Optional[str] = None
+    DB_INIT_RETRIES: int = 5
+    DB_INIT_RETRY_DELAY_SECONDS: float = 1.0
 
     @validator("SQLALCHEMY_DATABASE_URI", pre=True)
     def assemble_db_connection(cls, v: Optional[str], values: Dict[str, Any]) -> Any:
