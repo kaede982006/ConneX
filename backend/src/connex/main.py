@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from connex.settings import settings
-from connex.api.routes import auth, rooms
+from connex.api.routes import auth, messages, rooms
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -22,3 +22,4 @@ def root():
 
 app.include_router(auth.router, prefix=f"{settings.API_V1_STR}/auth", tags=["auth"])
 app.include_router(rooms.router, prefix=f"{settings.API_V1_STR}/rooms", tags=["rooms"])
+app.include_router(messages.router, prefix=f"{settings.API_V1_STR}/messages", tags=["messages"])
