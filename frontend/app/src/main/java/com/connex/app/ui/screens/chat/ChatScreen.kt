@@ -39,6 +39,7 @@ fun ChatScreen(
     val msgState by vm.messages.collectAsState()
     val typing by vm.typing.collectAsState()
     val status by vm.status.collectAsState()
+    val banned by vm.banned.collectAsState()
     val meUserId = vm.meUserId()
 
     val ctx = LocalContext.current
@@ -67,7 +68,13 @@ fun ChatScreen(
             }
     }
 
-    val typingUsers = typing.filterValues { it }.keys.take(3).toList()
+    LaunchedEffect(banned) {
+        if (banned) {
+            onBack()
+        }
+    }
+
+    val typingUsers = typing.values.filter { it.isTyping }.map { it.displayName }.take(3)
 
     val channelName by vm.channelName.collectAsState()
 

@@ -25,10 +25,15 @@ class ChatViewModel @Inject constructor(
     private val authRepo: AuthRepository
 ) : ViewModel() {
 
+    data class TypingStatus(
+        val displayName: String,
+        val isTyping: Boolean
+    )
+
     private val _messages = MutableStateFlow<UiState<List<MessageEntity>>>(UiState.Idle)
     val messages = _messages.asStateFlow()
 
-    private val _typing = MutableStateFlow<Map<String, Boolean>>(emptyMap())
+    private val _typing = MutableStateFlow<Map<String, TypingStatus>>(emptyMap())
     val typing = _typing.asStateFlow()
 
     private val _status = MutableStateFlow<String?>(null)
@@ -36,6 +41,9 @@ class ChatViewModel @Inject constructor(
 
     private val _channelName = MutableStateFlow("Loading...")
     val channelName = _channelName.asStateFlow()
+
+    private val _banned = MutableStateFlow(false)
+    val banned = _banned.asStateFlow()
 
     fun connect(roomId: String, channelId: String) {
         viewModelScope.launch {
@@ -65,7 +73,22 @@ class ChatViewModel @Inject constructor(
 
                     viewModelScope.launch {
                         chatRepo.typingEvents(roomId, channelId).collect { t ->
-                            _typing.value = _typing.value.toMutableMap().apply { put(t.senderId, t.isTyping) }
+                            val displayName = t.senderName?.ifBlank { null } ?: t.senderId
+                            _typing.value = _typing.value.toMutableMap().apply {
+                                put(t.senderId, TypingStatus(displayName, t.isTyping))
+                            }
+                        }
+                    }
+
+                    viewModelScope.launch {
+                        val meId = authRepo.meUserId()
+                        chatRepo.bannedEvents(roomId).collect { b ->
+                            if (meId != null && b.userId == meId) {
+                                roomRepo.leaveRoom(roomId)
+                                chatRepo.disconnect()
+                                _banned.value = true
+                                _status.value = "강제 퇴장되었습니다."
+                            }
                         }
                     }
                 }

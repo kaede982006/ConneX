@@ -10,10 +10,9 @@ from connex.models.room_member import RoomMember
 from connex.models.user import User
 from connex.schemas.ws import IncomingWire, OutgoingWire
 from connex.security.auth import decode_access_token
-from connex.services.ws_manager import ConnectionManager
+from connex.services.ws_manager import manager
 
 router = APIRouter()
-manager = ConnectionManager()
 
 @router.websocket("/chat")
 async def chat_ws(websocket: WebSocket):
@@ -61,7 +60,7 @@ async def chat_ws(websocket: WebSocket):
 
     print("WS DEBUG: Connecting to manager")
     await websocket.accept()
-    await manager.connect(room_id, channel_id, websocket)
+    await manager.connect(room_id, channel_id, websocket, user_id_int)
     try:
         while True:
             raw = await websocket.receive_text()
@@ -96,6 +95,7 @@ async def chat_ws(websocket: WebSocket):
                     room_id=room_id,
                     channel_id=channel_id,
                     sender_id=str(user_id_int),
+                    sender_name=sender_name,
                     is_typing=incoming.is_typing,
                 )
                 await manager.broadcast(room_id, channel_id, outgoing.model_dump_json(by_alias=True))

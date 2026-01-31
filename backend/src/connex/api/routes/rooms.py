@@ -11,6 +11,7 @@ from connex.models.room_ban import RoomBan
 from connex.models.room_member import RoomMember
 from connex.models.room_key import RoomKey
 from connex.models.user import User
+from connex.services.ws_manager import manager
 from connex.schemas.rooms import (
     ChannelResponse,
     CreateChannelRequest,
@@ -533,4 +534,5 @@ async def ban_member(
         delete(RoomMember).where(RoomMember.room_id == room_id, RoomMember.user_id == request.user_id)
     )
     await session.commit()
+    await manager.disconnect_user(room_id, request.user_id)
     return BanResponse(status="banned")

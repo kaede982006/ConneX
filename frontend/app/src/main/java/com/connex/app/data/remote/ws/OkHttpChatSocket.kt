@@ -62,7 +62,16 @@ class OkHttpChatSocket @Inject constructor(
                                 roomId = w.roomId ?: "",
                                 channelId = w.channelId ?: "",
                                 senderId = w.senderId ?: "",
+                                senderName = w.senderName,
                                 isTyping = w.isTyping ?: false
+                            )
+                        )
+                    }
+                    "banned" -> {
+                        _events.tryEmit(
+                            IncomingWsEvent.Banned(
+                                roomId = w.roomId ?: "",
+                                userId = w.userId ?: ""
                             )
                         )
                     }
@@ -124,6 +133,7 @@ class OkHttpChatSocket @Inject constructor(
         val messageId: String? = null,
         val senderId: String? = null,
         val senderName: String? = null,
+        val userId: String? = null,
         val envelope: Envelope? = null,
         val createdAtMs: Long? = null,
         val isTyping: Boolean? = null

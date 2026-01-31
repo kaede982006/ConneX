@@ -32,7 +32,13 @@ sealed class IncomingWsEvent {
         val roomId: String,
         val channelId: String,
         val senderId: String,
+        val senderName: String?,
         val isTyping: Boolean
+    ) : IncomingWsEvent()
+
+    data class Banned(
+        val roomId: String,
+        val userId: String
     ) : IncomingWsEvent()
 
     data class System(val code: String, val message: String) : IncomingWsEvent()

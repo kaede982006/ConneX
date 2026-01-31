@@ -46,6 +46,10 @@ class ChatRepository @Inject constructor(
         socket.events().filterIsInstance<IncomingWsEvent.Typing>()
             .filter { it.roomId == roomId && it.channelId == channelId }
 
+    fun bannedEvents(roomId: String): Flow<IncomingWsEvent.Banned> =
+        socket.events().filterIsInstance<IncomingWsEvent.Banned>()
+            .filter { it.roomId == roomId }
+
     fun incomingMessages(roomId: String, channelId: String): Flow<MessageEntity> =
         socket.events()
             .filterIsInstance<IncomingWsEvent.Message>()
